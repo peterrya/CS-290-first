@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<title>How-To: Use the AniList API - Anime Reading</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<div id="stdtext">
+	For this page we will assume that you have implemented the authentication for read actions found <a href="auth-read.html">here</a>.
+	Again the docs outline what the calls are so we will be focusing on implementation of the calls so it's not a bad idea familiarize yourself 
+	<a href="http://anilist-api.readthedocs.io/en/latest/anime.html">with them</a>.<p>
+	Searching is a simple process of sending a get request to the search url and appending the access code as a url parameter as shown in Section 1. To test this type
+	in a search key and click the Search button to see the response.
+	</div>
+	<h4>Section 1</h4>
+	<div id="code">
+	var req = new XMLHttpRequest();
+	<p>var quer = document.getElementById('query').value;
+	<p>req.open("GET", "https://anilist.co/api/anime/search/" +  quer + "?access_token=" + access_token, true);
+	<p>req.addEventListener('load',function(){
+	<p class="tab">if(req.response.length > 4){
+	<p class="tabt"> var response = JSON.parse(req.responseText);
+	<p class="tabt">	document.getElementById('searchout').innerHTML = req.responseText;
+	<p class="tab">} else {
+	<p class="tabt">	document.getElementById('searchout').innerHTML = "No matching animes found";
+	<p class="tab">}
+	<p>});
+	req.send(null);
+	</div>
+	<label>Search Query:
+		<input type="text" name="Query" size="30" maxlength="100" id="query">
+	</label>
+	<input type="submit" id="search" value="Search"><p>
+	<div id="searchout"></div><p>
+	<div id="stdtext">
+	Unlike previous examples this one does some basic checking on the returned data before returning it. That's because if the user's query does not return any animes 
+	req.response will be " " and displaying nothing is a poor failure state. To get around this we insert a simple if statement that checks the length of the response.
+	Four is the minimum length used because every valid response begin with "[{" and end with "}]". <p>
+	As you have probably noticed the data dumped is dense and difficult to glean any meaningful information from. To combat that the Section 2 will print lists	
+	based on the search results (only the load function is shown to avoid duplicating too much code). Type in a query and press the Table Search button to see it in action.
+	<h4>Section 2</h4>
+	</div>
+	<div id="code">
+	<p>req.addEventListener('load',function(){
+	<p class="tab">if(req.response.length > 4){
+	<p class="tabt">			var response = JSON.parse(req.responseText);
+	<p class="tabt">			for(var anime in response){
+	<p class="tabf">				addList(response[anime]);
+	<p class="tabt">			}	
+	<p class="tab">} else {
+	<p class="tabt">	document.getElementById('searchout').innerHTML = "No matching animes found";
+	<p class="tab">}
+	<p>});
+	</div>
+	<div id="stdtext">
+	where addList() is defined as
+	</div>
+	<div id="code">
+	<p>function addList(obj, div){
+	<p class="tab">var list = document.createElement('ul');
+	<p class="tab">document.getElementById(div).appendChild(list);
+	
+	<p class="tab">for(var data in obj){
+		<p class="tabt">var elem = document.createElement('li');
+		<p class="tabt">elem.appendChild(document.createTextNode(data + " : " + obj[data]));
+		<p class="tabt">list.appendChild(elem);
+	<p class="tab">}
+
+<p>}
+	</div>
+	<label>Search Query:
+		<input type="text" name="Query" size="30" maxlength="100" id="tquery">
+	</label>
+	<input type="submit" id="tsearch" value="List Search"><p></input>
+	<div id="lis"></div>
+	<div id="stdtext">
+	The load function is much the same as in Section One but it has a for in loop that calls addList for each returned anime instead of printing the whole response.
+	Using simple DOM manipulation addList() creates an unordered list for the anime object "obj" at the bottom of the div ID "div" that is passed to it.
+	It then loops through every element of obj creating a list element and appending it to the list.
+	<p>
+	As you can see a single word will often bring up a huge list of animes that have that word somewhere in their data so it's likely you will want to set up filters to manage them.
+	Section 3 shows how you can use a single filter to cut down on amount of displayed animes (again only showing the load function to avoid duplicating too much code).
+	</div>
+	<h4>Section 3</h4>
+	<div id="code">
+	<p>if(req.response.length > 4){
+				<p class="tab">var filter = document.getElementById('filtval').value;
+				<p class="tab">var response = JSON.parse(req.responseText);
+				<p class="tab">for(var anime in response){
+					<p class="tabt">var curan = response[anime];
+					<p class="tabt">if(filter == 'synonyms'){
+						<p class="tabf">var add = 0;
+						<p class="tabf">curan = curan[filter];
+						<p class="tabf">for(var x in curan){
+							<p class="tabv">if(curan[x].includes(quer)){
+								<p class="tabi">add = 1;
+							<p class="tabv">}
+						<p class="tabf">}
+						<p class="tabf">if(add == 1){
+							<p class="tabv">addList(response[anime], "liss");
+						<p class="tabf">}
+					<p class="tabt">} else if(typeof(curan[filter]) != 'number'){
+						<p class="tabf">if(curan[filter].includes(quer)){
+							<p class="tabv">addList(response[anime], "liss");
+						<p class="tabf">}
+					<p class="tabt">} else {
+						<p class="tabf">console.log(filter + " " + curan[filter]);
+						<p class="tabf">if(curan[filter]== quer){
+							<p class="tabv">addList(response[anime], "liss");
+						<p class="tabf">}
+					<p class="tabt">}
+				<p class="tab">}
+		<p>	} else {
+				<p class="tab">document.getElementById('liss').innerHTML = "No matching animes found";
+			<p>}
+	</div>
+	<label>Search Query:
+		<input type="text" name="Query" size="30" maxlength="100" id="fquery">
+	</label>
+	 <select id="filtval">
+		<option value="pick_one">Pick One</option>
+		<option value="id">ID</option>
+		<option value="title_romaji">title_romaji</option>
+		<option value="type">type </option>
+		<option value="adult">adult </option>
+		<option value="popularity">popularity</option>
+		<option value="title_japanese">title_japanese </option>
+		<option value="title_english">title_english </option>
+		<option value="synonyms">synonyms</option>
+		<option value="airing_status">airing_status </option>
+		<option value="average_score">average_score </option>
+		<option value="total_episodes">total_episodes </option>
+		<option value="relation_type">relation_type </option>
+		<option value="role">role  </option>
+	</select>
+	<input type="submit" id="fsearch" value="Filter Search"><p></input>
+	<div id="liss"></div>
+	<div id="stdtext">
+	Here our code makes significant progress from what we had in Section 1 and Section 2. Most of the new code is logic for handling various filter types.
+	At its core the structure is the same, a for in loop looks at every returned anime and prints them. However this time there are three main if statements handling the filter logic. 
+	The first is synonyms. This one is handled separately because the synonyms element is an array of strings so standard string operations don't work on it. To work around that 
+	we set curan (short for current anime) to equal the current animes synonyms value and loop through that. If any of the synonyms contain the query (quer in the code)
+	a variable add is set to indicate that the anime passes the filter and to print it. We then move on to any other non-numeric filters. This is a far simpler
+	case consisting of a single if statement checking if the query is in whatever value the current anime is being filtered by. The numeric filter is similar but
+	uses a direct == instead of the includes().
+	<p>
+	This is much more manageable but it is interesting to note that the API search function does not look at any number values (such total_episodes or average_scores) 
+	so to display anything filtered by a numeric value it must have that value both somewhere in its non-numeric values and in the particular value being filtered.
+	To make the numeric filters useful we will separate the search input from the filter input. Section 4 contains code and forms to demonstrate this application.
+	</div>
+	<h4>Section 4</h4>
+	<div id="code">
+		<p>if(req.response.length > 4){
+				<p class="tab">var filter = document.getElementById('indfilt').value;
+				<p class="tab">var response = JSON.parse(req.responseText);
+				<p class="tab">for(var anime in response){
+					<p class="tabt">var curan = response[anime];
+					<p class="tabt">if(filter == 'synonyms'){
+						<p class="tabf">var add = 0;
+						<p class="tabf">curan = curan[filter];
+						<p class="tabf">for(var x in curan){
+							<p class="tabv">if(curan[x].includes(filt)){
+								<p class="tabi">add = 1;
+							<p class="tabv">}
+						<p class="tabf">}
+						<p class="tabf">if(add == 1){
+							<p class="tabv">addList(response[anime], "lisss");
+						<p class="tabf">}
+					<p class="tabt">} else if(typeof(curan[filter]) != 'number'){
+						<p class="tabf">console.log(curan);
+						<p class="tabf">console.log("|" + filter + "|");
+						<p class="tabf">if(curan[filter].includes(filt)){
+							<p class="tabv">addList(response[anime], "lisss");
+						<p class="tabf">}
+					<p class="tabt">} else {
+						<p class="tabf">console.log(filter + " " + curan[filter]);
+						<p class="tabf">if(curan[filter]== filt){
+							<p class="tabv">addList(response[anime], "lisss");
+						<p class="tabf">}
+					<p class="tabt">}
+				<p class="tab">}
+			} else {
+				document.getElementById('liss').innerHTML = "No matching animes found";
+		<p>}
+	</div>
+	<label>Search Query:
+		<input type="text" name="Query" size="30" maxlength="100" id="sqtext">
+	</label>
+	<label>Filter Query:
+		<input type="text" name="Query" size="30" maxlength="100" id="fqtext">
+	</label>
+	 <select id="indfilt">
+		<option value="pick_one">Pick One</option>
+		<option value="id">ID</option>
+		<option value="title_romaji">title_romaji</option>
+		<option value="type">type </option>
+		<option value="adult">adult </option>
+		<option value="popularity">popularity</option>
+		<option value="title_japanese">title_japanese </option>
+		<option value="title_english">title_english </option>
+		<option value="synonyms">synonyms</option>
+		<option value="airing_status">airing_status </option>
+		<option value="average_score">average_score </option>
+		<option value="total_episodes">total_episodes </option>
+		<option value="relation_type">relation_type </option>
+		<option value="role">role  </option>
+	</select>
+	<input type="submit" id="indfsearch" value="Filter Search"><p></input>
+	<div id="lisss"></div>
+	<div id="stdtext">
+	This code is nearly identical with the main change being the addition of a filt variable that holds the value of the Filter Query text box. 
+	<p>
+	With this in place you can search 
+	all non-numeric fields filter the results of that search based on non-numeric and numeric fields. Further information can be gathered about a given anime by taking its ID and
+	making a get request to "https://anilist.co/api/anime/" + ID. More specific information can be requested by appending the desired information to the url such as 
+	"https://anilist.co/api/anime/" + ID + "/staff". For more information about what requests can be made make sure to read the 
+	<a href="http://anilist-api.readthedocs.io/en/latest/anime.html">documentation</a><p>
+	To learn how to implement writing calls read <a href="anime-write.html">here</a>
+	</div>
+</body>
+<a href="main.html">home</a>
+<script src="anime-read.js"></script>
+</html>

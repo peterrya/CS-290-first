@@ -1,0 +1,11 @@
+#code{
+	background-color:#d3d3d3;
+	line-height: 100%;
+	font-family: "courier New", Courier, monospace;
+	text-indent: 50px;
+}
+.tab { margin-left: 30px; }
+.tabt { margin-left: 60px; }
+.tabf { margin-left: 90px; }
+.tabv { margin-left: 120px; }
+.tabi { margin-left: 150px; }

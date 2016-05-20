@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<title>How-To: Use the AniList API</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<div id="stdtext">
+	There are a handful of things that require a User Authenticated log-in described <a href="auth-write.html">here</a>. This How-To will focus on the process of writing and posting
+	a review. This is a surprisingly easy endeavor but the review must follow some strict guidelines so be aware of them when they come up. Before attempting any of the interactive
+	examples make sure you got your PIN, entered it into the PIN text box and hit the "Get Access Token" button.
+	<p>
+	</div>
+	<input type="submit" id="clicpin" value="Get PIN"><p>
+	<label>PIN:
+		<input type="text" name="PIN" size="30" maxlength="100" id="authpin">
+	</label>
+	<input type="submit" id="clictok" value="Get Access Token"><p>
+	<div id="stdtext">
+	The code in Section 1 takes the data from the input boxes and sends it as a review
+	</div>
+	<h4>Section 1</h4>
+	<div id="code">
+		<p>var anime_id = document.getElementById('id').value;
+		<p>var tex = document.getElementById('revtext').value;
+		<p>var summary = document.getElementById('revsum').value;
+		<p>var privat = document.getElementById('priv').value;
+		<p>var score = document.getElementById('sco').value;
+		<p>if(tex.length < 2000){
+			<p class="tab">console.log("Review is too short");
+		<p>}
+		<p>if(summary.length < 20){
+			<p class="tab">console.log("Summary is too short");
+		<p>}
+		<p>if(summary.length > 120){
+			<p class="tab">console.log("Summary is too long");
+		<p>}
+		<p>var req = new XMLHttpRequest();
+		<p>req.open("POST", "https://anilist.co/api/anime/review?access_token=" + access_token, true);
+		<p>req.addEventListener('load',function(){
+			<p class="tab">document.getElementById('oout').innerHTML = req.response;
+		<p>});
+		<p>req.setRequestHeader("Authorization", access_token);
+		<p>req.setRequestHeader('Content-Type', 'application/json');
+		<p>req.send('{"anime_id":"' + anime_id + '","text":"' + tex + '","summary":"' + summary + '","private":"' + privat + '","score":"' + score + '"}');
+	</div>
+	<div id="stdtext">
+		This is the first non-authentication use of POST method. The biggest difference in using POST methods instead of GET methods is that instead of appending the access_code to the URL
+		instead add it to the headers (seen in the first setRequestHeader call). Outside of that this is a pretty standard procedure, we take all the necessary information from the 
+		html forms, do a little bit of input verification (just focused on text input lengths, the server will reject requests with missing or inappropriate parameters) and send that data 
+		to the /anime/review url. Make sure that you don't include any newlines or quotation marks in your review or the AniList server will reject it.
+	</div>
+	<div id="oout">	</div><p>
+	<label>Anime ID:
+		<input type="number" name="ID" size="30" maxlength="100" id="id">
+	</label><p>
+	<textarea id="revtext">Type your review here, make sure it is at least 2000 characters</textarea><p>
+	<textarea id="revsum">Type a summary of your review here, between 20 and 120 characters</textarea><p>
+	<label>Private (1 for the review to be private):
+	<select id="priv">
+		<option value="1">1</option>
+		<option value="0">0</option>
+	</select><p>
+	</label>
+	<label>Score between 1 and 100:
+		<input type="number" name="score" id="sco">
+	</label><p>
+	<input type="submit" id="subre" value="Submit Review"><p>
+	<h4>Section 2</h4>
+	<div id="stdtext">
+	If you want to look at all the reviews you (or another user) have posted you can call a GET request on the user/{user_id || user_name}/reviews where the || marks and or and 
+	NOT concatenation. The "Submit Review" button returns all reviews posted by the user who authenticated the current session. There are two new code segments used to do this posted
+	below.
+	</div>
+	<div id="code">
+	<p>var req = new XMLHttpRequest();
+	<p>var anime_id = document.getElementById('id').value;
+	<p>var uid;
+	<p>req.open("GET", "https://anilist.co/api/user?access_token=" + access_token, true);
+	<p>req.addEventListener('load',function(){
+		<p class="tab">var response = JSON.parse(req.responseText);
+		<p class="tab">uid = response.id;
+		<p class="tab">getReviews(uid);
+	<p>});
+	<p>req.send(null);
+	</div>
+	where getReviews() is defined below and addList is the reused from the read operations.
+	<div id="code">
+	<p>var lnode = document.getElementById('lis');
+	<p>while (lnode.firstChild) {
+		<p class="tab">lnode.removeChild(lnode.firstChild);
+	<p>}
+	<p>var req = new XMLHttpRequest();
+	<p>req.open("GET", "https://anilist.co/api/user/"+ uid + "/reviews?access_token=" + access_token, true);
+	<p>req.addEventListener('load',function(){
+		<p class="tab">if(req.response.length > 4){
+			<p class="tabt">var response = JSON.parse(req.responseText);
+			<p class="tabt">response = response["anime"];
+			<p class="tabt">if(response.length > 0){
+				<p class="tabf">for(var rev in response){
+					<p class="tabv">addList(response[rev], "lis");
+				<p class="tabf">}
+			<p class="tabt">} else {
+				<p class="tabf">document.getElementById('lis').innerHTML = "No reviews found";
+			<p class="tabt">}
+		<p class="tab">} else {
+			<p class="tabt">console.log(response);
+			<p class="tabt">document.getElementById('lis').innerHTML = "No reviews found";
+		<p class="tab">}
+	<p>});
+	<p>req.send(null);
+	</div>
+	<input type="submit" id="getrev" value="Get Reviews"><p></input>
+	<div id="lis"></div>
+	<h4>Section 3</h4>
+	<div id="stdtext">
+	Finally if you want to delete a review it's a simple matter of sending a DELETE method message to /anime/review with the review id as a parameter and the access code as a header.
+	The code below shows what happens when the "Delete Review" button is clicked, deleting the review with the ID typed into "Review ID".
+	</div>
+	<div id="code">
+	<p>var req = new XMLHttpRequest();
+	<p>var revid = document.getElementById('rid').value
+	<p>req.open("DELETE", "https://anilist.co/api/anime/review", true);
+	<p>req.addEventListener('load',function(){
+		<p class="tab">if(req.response.length > 1){
+			<p class="tabt">document.getElementById('delout').innerHTML = "No such review exists";
+		<p class="tab">} else {
+			<p class="tabt">document.getElementById('delout').innerHTML = "Review deleted";
+		<p class="tab">}
+	<p>});
+	<p>req.setRequestHeader("Authorization", access_token);
+	<p>req.setRequestHeader('Content-Type', 'application/json');
+	<p>req.send('{"id":"' + revid + '"}');
+	</div>
+	<label>Review ID:
+		<input type="text" name="rID" size="30" maxlength="100" id="rid">
+	</label>
+	<input type="submit" id="delrev" value="Delete Review"><p>	
+	<div id="delout"></div><p>
+	<div id="stdtext">
+	This covers all of the major types of actions using the AniList API. There are more covered in the 
+	<a href="http://anilist-api.readthedocs.io/en/latest/introduction.html">documentation</a> but with the implementations given there and the outlines in the documentation any
+	interaction with the AniList API should be easily constructible.
+	</div>
+</body>
+<script src="anime-write.js"></script>
+<a href="main.html">home</a>
+</html>

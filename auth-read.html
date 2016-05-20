@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="UTF-8">
+  <title>How-To: Use the AniList API - Authentication For Reading</title>
+  <link rel="stylesheet" href="style.css">
+ </head>
+ <body>
+	<div id="stdtext">
+	This page covers the process to get an access code that allows read actions. It doesn't require authentication with a user account so it's easier and doesn't need the user to
+	visit the AniList website. However since the access code gained with this method isn't tied to an account it can't be used for any write operations.
+	<p>
+	The official documentation has a <a href="http://anilist-api.readthedocs.io/en/latest/authentication.html#grant-client-credentials">good explanation</a> of the authentication process and how to obtain various credentials.
+	However this just covers the specific requests to use so and doesn't have any complete examples. On this page we'll look at how to work it into code and automate Client Credentials
+	<p>
+	First you will need an AniList account so you can get an id to interact with the API. Go to the AniList <a href="">homepage</a>, and follow the instructions to make an account. 
+	Then go to the <a href="https://anilist.co/settings/developer">developer settings</a> click "Create New Client" and fill in the requested information.
+	<p>
+	The Get Client Credentials Button executes the code below and prints out what is returned.
+	</div>
+	<div id="code">
+		var req = new XMLHttpRequest();<p>
+		req.open("POST", "https://anilist.co/api/auth/access_token", true);<p>
+		req.addEventListener('load',function(){<p>
+		    <p class="tab">var response = JSON.parse(req.responseText);</p>
+			<p class="tab">access_token = response.access_token;</p>
+			<p class="tab">token_type = response.token_type;</p>
+			<p class="tab">expires = response.expires;</p>
+			<p class="tab">expires_in = response.expires_in;</p>
+			<p class="tab">setTimeout(function(){</p>
+				<p class="tabt">document.getElementById("clicred").click();</p>
+			<p class="tab">}, expires_in*1000);</p><p>
+		});<p>
+		req.setRequestHeader('Content-Type', 'application/json');<p>
+		req.send('{"grant_type":"client_credentials","client_id":[id],"client_secret":[secret]}');<p>
+	</div>
+	<div id="cliout"></div>
+	<input type="submit" id="clicred" value="Get Client Credentials"><p>
+	This simply sends client information to the /auth/access_token url and receives an access_token in exchange. 
+	The values access_token, token_type, expires and expires_in are all global variables we can now reference at any time, though access_token is the only one we'll need. 
+	As you may have noticed this token will only last for an hour so we added the setTimeout which will cause automatic re-certification. In this case it triggers the Get Client Credentials button
+	but it should be however you are triggering certification. When sending the request [id] and [secret] are the client_id and client_secret you obtained when setting up your client.
+	<br/>
+	With this code running most of the read operations are fair game. However write operations require further authentication found <a href="auth-write.html">here</a>.
+	If you aren't interested in write operations you can skip to the read operations page <a href="anime-read.html">here</a>.
+	<p>
+	<script src="auth-cl.js"></script>
+ </body>
+ <a href="main.html">home</a>
+</html>

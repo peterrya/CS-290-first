@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>How-To: Use the AniList API - Authentication For Writing</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<div id="stdtext">
+	Setting up certification for writing is a little more complicated than reading. There are two methods for accomplishing this and for this demonstration we will be using the PIN method.<p>
+	First clicking the "Get PIN" button should open an AniList authorization page. Once a user has logged in and hit Accept a code will be displayed. 
+	This code is not what will actually give us access but will be used to get the access token.<p>
+	</div>
+	<h4>Section 1</h4>
+	<div id="code">
+	var win = window.open("https://anilist.co/api/auth/authorize?grant_type=authorization_pin&client_id=" + ID + "&response_type=pin", '_blank');<p>
+	win.focus();
+	</div>
+	<input type="submit" id="clicpin" value="Get PIN"><p>
+	<div id="stdtext">
+		Copy the code and paste it in the "Authentication PIN" box. Then press the "Get Access Token" button which will execute the below code and print the data sent in response.
+		<p>
+	</div>
+	<div id="code">
+		var pin = document.getElementById('authpin').value;
+		if(pin != ""){
+			<p class="tab">var req = new XMLHttpRequest();</p>
+			<p class="tab">req.open("POST", "https://anilist.co/api/auth/access_token", true);</p>
+			<p class="tab">req.addEventListener('load',function(){</p>
+			<p class="tabt">	var response = JSON.parse(req.responseText);</p>
+			<p class="tabt">	access_token = response.access_token;</p>
+			<p class="tabt">	token_type = response.token_type;</p>
+			<p class="tabt">	expires = response.expires;</p>
+			<p class="tabt">	expires_in = response.expires_in;</p>
+			<p class="tabt">	refresh_token = response.refresh_token;</p>
+			<p class="tabt">	setTimeout(refresh(), expires_in*1000);</p>
+			<p class="tab">});</p>
+			<p class="tab">req.setRequestHeader('Content-Type', 'application/json');</p>
+			<p class="tab">req.send('{"grant_type":"authorization_pin","client_id":[id],"client_secret":[secret],"code":' + "\"" + pin + "\"" + "}");</p>
+		}
+	</div>
+	<label>Authentication PIN:
+		<input type="text" name="PIN" size="30" maxlength="100" id="authpin">
+	</label>
+	<input type="submit" id="clictok" value="Get Access Token"><p>
+
+	<div id="cliout"></div>
+	<div id="stdtext">
+	Similar to the read only authentication this token only lasts for an hour. However unlike the read onlu authentication we are sent a refresh token in addition to all the other data
+	so we don't need to go through the entire procedure every hour. As you can see in above javascript at the end of the load function we set a timeout for an hour that calls refresh() 
+	which is displayed in Section 2.
+	<p>
+	<h4>Section 2</h4>
+	</div>
+	<div id="code">
+		var req = new XMLHttpRequest();</p>
+	<p>req.open("POST", "https://anilist.co/api/auth/access_token", true);</p>
+	<p>req.addEventListener('load',function(){</p>
+		<p class="tab">var response = JSON.parse(req.responseText);</p>
+		<p class="tab">access_token = response.access_token;</p>
+		<p class="tab">token_type = response.token_type;</p>
+		<p class="tab">expires = response.expires;</p>
+		<p class="tab">	expires_in = response.expires_in;</p>
+		<p class="tab">setTimeout(refresh, expires_in*1000);</p>
+	<p>});</p>
+	<p>req.setRequestHeader('Content-Type', 'application/json');</p>
+	<p>req.send('{"grant_type":"refresh_token","client_id":[id],"client_secret":[secret],"refresh_token":' + "\"" + refresh_token + "\"" + "}");</p>
+	</div>
+	<div id="stdtext">
+	This code is very similar to the code to get the initial access_token. The main difference is the grant type and refresh_token being sent instead of the PIN. Again we use setTimeout
+	to recursively call the refresh every hour so access appears seamless.
+	</div>
+	<script src="auth-write.js"></script>
+</body>
+<a href="main.html">home</a>
+</html>
